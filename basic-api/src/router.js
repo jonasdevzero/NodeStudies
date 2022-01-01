@@ -23,7 +23,7 @@ export default class Router {
         // removing the "/" in the last index
         if (pathname.length > 1 && pathname.split("")[pathname.length - 1].charCodeAt() === 47)
             pathname = pathname.slice(0, pathname.length - 1);
-
+            
         const route = this.routes[method]?.find(r => r.isRegex ? r.path.exec(pathname)?.[0] === pathname : false || r.path === pathname)
 
         if (route) {
@@ -33,7 +33,7 @@ export default class Router {
                 const paramValues = route.path.exec(pathname).filter((_, i) => i !== 0)
                 route.paramsName.map((n, i) => params[n] = paramValues[i])
             }
-                
+
             let data = ""
             req.on("data", chunk => {
                 data += chunk
@@ -41,7 +41,8 @@ export default class Router {
 
             req.on("end", () => {
                 req.params = params
-                req.data = data ? JSON.parse(data) : undefined
+                req.body = data ? JSON.parse(data) : {}
+                req.query = query
                 route.handle(req, res)
             })
         } else {
@@ -76,7 +77,7 @@ export default class Router {
 
                 paramsName.push(path.slice(i + 1, wildcardEnd > i ? wildcardEnd : len))
 
-                newPath += "\([a-zA-Z0-9\-o]+)"
+                newPath += "\([.@!#$%^&*()a-zA-Z0-9]+)"
                 i = wildcardEnd > i ? wildcardEnd - 1 : len
             } else {
                 newPath += path[i]

@@ -1,124 +1,128 @@
 import { IncomingMessage, ServerResponse } from "http"
 import fs from "fs/promises"
+import UserRepository from "../repositories/userRepository.js"
+import User from "../models/user.js"
 
-export default class UserController {
-    constructor() { }
+const DEFAULT_HEADER = { "Content-Type": "text/json" }
 
-    /**
-    * @param {IncomingMessage} req
-    * @param {ServerResponse} res
-    */
-    async index(req, res) {
-        try {
-            const data = await fs.readFile("./data.json")
-            const users = JSON.parse(data).users
+/**
+ * @param {{ userRepository: UserRepository }} param0 
+ */
+export default function UserController({ userRepository }) {
 
-            res.writeHead(200, { "Content-Type": "text/plain" })
-            res.write(JSON.stringify({ users }))
-            res.end()
-        } catch (error) {
-            res.writeHead(500, { "Content-Type": "text/json" })
-            res.write(`Error: ${error}`)
-            res.end()
-        }
-    }
+    return {
+        /**
+        * @param {IncomingMessage} req
+        * @param {ServerResponse} res
+        */
+        async index(req, res) {
+            try {
+                const users = await userRepository.find()
 
-    /**
-    * @param {IncomingMessage} req
-    * @param {ServerResponse} res
-    */
-    async get(req, res) {
-        try {
-            const id = req.params.id
+                res.writeHead(200, DEFAULT_HEADER)
+                res.write(JSON.stringify({ users }))
+                res.end()
+            } catch (error) {
+                res.writeHead(500, DEFAULT_HEADER)
+                res.write(`Error: ${error}`)
+                res.end()
+            }
+        },
 
-            const data = await fs.readFile("./data.json")
-            const users = JSON.parse(data).users
+        /**
+        * @param {IncomingMessage} req
+        * @param {ServerResponse} res
+        */
+        async get(req, res) {
+            try {
+                const id = req.params.id
 
-            const user = users.find(u => u.id === Number(id))           
+                const user = await userRepository.findOne(Number(id))
 
-            res.writeHead(200, { "Content-Type": "text/json" })
-            res.write(JSON.stringify({ user }))
-            res.end()
-        } catch (error) {
-            res.writeHead(500, { "Content-Type": "text/plain" })
-            res.write(`Error: ${error}`)
-            res.end()
-        }
-    }
+                res.writeHead(200, DEFAULT_HEADER)
+                res.write(JSON.stringify({ user }))
+                res.end()
+            } catch (error) {
+                res.writeHead(500, DEFAULT_HEADER)
+                res.write(`Error: ${error}`)
+                res.end()
+            }
+        },
 
-    /**
-    * @param {IncomingMessage} req
-    * @param {ServerResponse} res
-    */
-    async create(req, res) {
-        try {
-            const data = req.body
+        /**
+        * @param {IncomingMessage} req
+        * @param {ServerResponse} res
+        */
+        async create(req, res) {
+            try {
+                const data = req.body
 
-            const id = (Math.random() * 100) + Date.now()
-            data.id = id
+                const user = new User(data)
 
-            const jsonData = await fs.readFile("./data.json")
-            const d = JSON.parse(jsonData)
-            d.users.push(data)            
+                const { valid, error } = user.isValid()
+                if (!valid) {
+                    res.writeHead(400, DEFAULT_HEADER)
+                    res.write(JSON.stringify({ error: error.join(", ") }))
+                    return res.end()
+                }
 
-            await fs.writeFile("./data.json", JSON.stringify(d))
+                await userRepository.create(user)
 
-            res.writeHead(201, { "Content-Type": "text/plain" })
-            res.write(`user ${data.name} created`)
-            res.end()
-        } catch (error) {
-            res.writeHead(500, { "Content-Type": "text/plain" })
-            res.write(`Error: ${error}`)
-            res.end()
-        }
-    }
+                res.writeHead(201, DEFAULT_HEADER)
+                res.write(JSON.stringify({ message: `user '${data.name} ${data.last_name}' created` }))
+                res.end()
+            } catch (error) {
+                res.writeHead(500, DEFAULT_HEADER)
+                res.write(`Error: ${error}`)
+                res.end()
+            }
+        },
 
-    /**
-    * @param {IncomingMessage} req
-    * @param {ServerResponse} res
-    */
-    async update(req, res) {
-        try {
-            const id = Number(req.params.id)
-            const data = req.body
+        /**
+        * @param {IncomingMessage} req
+        * @param {ServerResponse} res
+        */
+        async update(req, res) {
+            try {
+                const id = Number(req.params.id)
+                const { name, last_name } = req.body
 
-            const jsonData = await fs.readFile("./data.json")
-            const d = JSON.parse(jsonData)
-            d.users = d.users.map(u => u.id === id ? { id: u.id, ...data } : u)
+                if (!name && !last_name) {
+                    res.writeHead(400, DEFAULT_HEADER)
+                    res.write(JSON.stringify({ error: "'name' or 'last_name' is missing" }))
+                    return res.end()
+                }
 
-            await fs.writeFile("./data.json", JSON.stringify(d))
+                await userRepository.update(id, { name, last_name })
 
-            res.writeHead(200, { "Content-Type": "text/plain" })
-            res.write(`update 'user'`)
-            res.end()
-        } catch (error) {
-            res.writeHead(500, { "Content-Type": "text/plain" })
-            res.write(`Error: ${error}`)
-            res.end()
-        }
-    }
+                res.writeHead(200, DEFAULT_HEADER)
+                res.write(JSON.stringify({ message: "Ok" }))
+                res.end()
+            } catch (error) {
+                res.writeHead(500, DEFAULT_HEADER)
+                res.write(`Error: ${error}`)
+                res.end()
+            }
+        },
 
-    /**
-    * @param {IncomingMessage} req
-    * @param {ServerResponse} res
-    */
-    async delete(req, res) {
-        try {
-            const id = Number(req.params.id)
+        /**
+        * @param {IncomingMessage} req
+        * @param {ServerResponse} res
+        */
+        async remove(req, res) {
+            try {
+                const id = Number(req.params.id)
 
-            const jsonData = await fs.readFile("./data.json")
-            const d = JSON.parse(jsonData)
-            d.users = d.users.filter(u => u.id !== id)
-            
-            await fs.writeFile("./data.json", JSON.stringify(d))
+                await userRepository.delete(id)
 
-            res.writeHead(200, { "Content-Type": "text/plain" })
-            res.write(`delete 'user'`)
-            res.end()
-        } catch (error) {
-            res.writeHead(500, { "Content-Type": "text/plain" })
-            res.write(`Error: ${error}`)
-            res.end()
-        }
+                res.writeHead(200, DEFAULT_HEADER)
+                res.write(JSON.stringify({ message: "Ok" }))
+                res.end()
+            } catch (error) {
+                res.writeHead(500, DEFAULT_HEADER)
+                res.write(`Error: ${error}`)
+                res.end()
+            }
+        },
     }
 }

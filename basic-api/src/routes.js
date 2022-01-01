@@ -1,9 +1,9 @@
 import Router from "./router.js";
-import UserController from "./controllers/UserController.js";
+import UserFactory from "./factories/userFactory.js"
 
 const router = new Router()
 
-const userController = new UserController()
+const userController = UserFactory.generateInstance()
 
 router.get("/", (req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" })
@@ -19,6 +19,6 @@ router.post("/user", userController.create)
 
 router.put("/user/:id", userController.update)
 
-router.delete("/user/:id", userController.delete)
+router.delete("/user/:id", userController.remove)
 
 export default router

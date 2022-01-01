@@ -23,7 +23,7 @@ export default class Router {
         // removing the "/" in the last index
         if (pathname.length > 1 && pathname.split("")[pathname.length - 1].charCodeAt() === 47)
             pathname = pathname.slice(0, pathname.length - 1);
-            
+
         const route = this.routes[method]?.find(r => r.isRegex ? r.path.exec(pathname)?.[0] === pathname : false || r.path === pathname)
 
         if (route) {
@@ -68,26 +68,31 @@ export default class Router {
      * @param {(request: ServerRequest, response: ServerResponse) => void} handle 
      */
     on(method, path, handle) {
-
         let newPath = ""
         let isRegex = false
         const paramsName = []
         for (let i = 0, len = path.length; i < len; i++) {
-            if (path[i].charCodeAt() === 58) {
-                isRegex = true
-                let wildcardEnd = i
+            const charCode = path[i].charCodeAt()
 
+            if (charCode === 58) { // charCode === 58 --> ':'
+                let parametricEnd = i
+                
                 for (let j = i; j < len; j++) {
                     if (path[j].charCodeAt() === 47) {
-                        wildcardEnd = j;
+                        parametricEnd = j;
                         break
                     }
                 }
-
-                paramsName.push(path.slice(i + 1, wildcardEnd > i ? wildcardEnd : len))
-
+                
+                isRegex = true
+                paramsName.push(path.slice(i + 1, parametricEnd > i ? parametricEnd : len))
                 newPath += "\([.@!#$%^&*()a-zA-Z0-9]+)"
-                i = wildcardEnd > i ? wildcardEnd - 1 : len
+                i = parametricEnd > i ? parametricEnd - 1 : len
+            } else if (charCode === 42) { // charCode === 42 --> '*'
+                isRegex = true
+                paramsName.push("*")
+                newPath += "\([.@!#$%^&*()a-zA-Z0-9\/]+)"
+                i = len
             } else {
                 newPath += path[i]
             }

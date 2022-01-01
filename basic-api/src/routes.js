@@ -1,41 +1,24 @@
 import Router from "./router.js";
+import UserController from "./controllers/UserController.js";
 
 const router = new Router()
 
+const userController = new UserController()
+
 router.get("/", (req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" })
-    res.write(`Route: /`)
+    res.write(`Ok`)
     res.end()
 })
 
-router.get("/user", (req, res) => {
-    res.writeHead(200, { "Content-Type": "text/plain" })
-    res.write(`Route: /user`)
-    res.end()
-})
+router.get("/user", userController.index)
 
-router.get("/user/:id", (req, res) => {
-    // console.log("params", req.params)
+router.get("/user/:id", userController.get)
 
-    res.writeHead(200, { "Content-Type": "text/plain" })
-    res.write(`Especial Route: /user/${req.url.split("/")[2]}`)
-    res.end()
-})
+router.post("/user", userController.create)
 
-router.get("/user/:id/message/:message_id", (req, res) => {
-    console.log("params", req.params)
+router.put("/user/:id", userController.update)
 
-    res.writeHead(200, { "Content-Type": "text/plain" })
-    res.write(`Especial Route: /user/${req.url.split("/")[2]}/message/${req.url.split("/")[4]}`)
-    res.end()
-})
-
-router.post("/user", (req, res) => {   
-    console.log("data", req.data)
-
-    res.writeHead(200, { "Content-Type": "text/plain" })
-    res.write("Route to Create User")
-    res.end()
-})
+router.delete("/user/:id", userController.delete)
 
 export default router

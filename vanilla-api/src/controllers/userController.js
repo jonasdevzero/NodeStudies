@@ -1,9 +1,6 @@
-import { IncomingMessage, ServerResponse } from "http"
-import fs from "fs/promises"
+import { ServerRequest, ServerResponse } from "../router.js"
 import UserRepository from "../repositories/userRepository.js"
 import User from "../models/user.js"
-
-const DEFAULT_HEADER = { "Content-Type": "text/json" }
 
 /**
  * @param {{ userRepository: UserRepository }} param0 
@@ -12,116 +9,90 @@ export default function UserController({ userRepository }) {
 
     return {
         /**
-        * @param {IncomingMessage} req
-        * @param {ServerResponse} res
+        * @param {ServerRequest} request
+        * @param {ServerResponse} response
         */
-        async index(req, res) {
+        async index(_request, response) {
             try {
                 const users = await userRepository.find()
 
-                res.writeHead(200, DEFAULT_HEADER)
-                res.write(JSON.stringify({ users }))
-                res.end()
+                response.status(200).send({ users })
             } catch (error) {
-                res.writeHead(500, DEFAULT_HEADER)
-                res.write(`Error: ${error}`)
-                res.end()
+                response.status(500).send({ error })
             }
         },
 
         /**
-        * @param {IncomingMessage} req
-        * @param {ServerResponse} res
+        * @param {ServerRequest} request
+        * @param {ServerResponse} response
         */
-        async get(req, res) {
+        async get(request, response) {
             try {
-                const id = req.params.id
+                const id = Number(request.params.id)
 
-                const user = await userRepository.findOne(Number(id))
+                const user = await userRepository.findOne(id)
 
-                res.writeHead(200, DEFAULT_HEADER)
-                res.write(JSON.stringify({ user }))
-                res.end()
+                response.status(200).send({ user })
             } catch (error) {
-                res.writeHead(500, DEFAULT_HEADER)
-                res.write(`Error: ${error}`)
-                res.end()
+                response.status(500).send({ error })
             }
         },
 
         /**
-        * @param {IncomingMessage} req
-        * @param {ServerResponse} res
+        * @param {ServerRequest} request
+        * @param {ServerResponse} response
         */
-        async create(req, res) {
+        async create(request, response) {
             try {
-                const data = req.body
+                const data = request.body
 
                 const user = new User(data)
-
                 const { valid, error } = user.isValid()
-                if (!valid) {
-                    res.writeHead(400, DEFAULT_HEADER)
-                    res.write(JSON.stringify({ error: error.join(", ") }))
-                    return res.end()
-                }
+
+                if (!valid) 
+                    return response.status(400).send({ error: error.join(", ") })                
 
                 await userRepository.create(user)
 
-                res.writeHead(201, DEFAULT_HEADER)
-                res.write(JSON.stringify({ message: `user '${data.name} ${data.last_name}' created` }))
-                res.end()
+                response.status(201).send({ message: `user '${data.name} ${data.last_name}' created` })
             } catch (error) {
-                res.writeHead(500, DEFAULT_HEADER)
-                res.write(`Error: ${error}`)
-                res.end()
+                response.status(500).send({ error })
             }
         },
 
         /**
-        * @param {IncomingMessage} req
-        * @param {ServerResponse} res
+        * @param {ServerRequest} request
+        * @param {ServerResponse} response
         */
-        async update(req, res) {
+        async update(request, response) {
             try {
-                const id = Number(req.params.id)
-                const { name, last_name } = req.body
+                const id = Number(request.params.id)
+                const { name, last_name } = request.body
 
-                if (!name && !last_name) {
-                    res.writeHead(400, DEFAULT_HEADER)
-                    res.write(JSON.stringify({ error: "'name' or 'last_name' is missing" }))
-                    return res.end()
-                }
-
+                if (!name && !last_name) 
+                    return response.status(400).send({ error: "'name' or 'last_name' is missing" })
+                
                 await userRepository.update(id, { name, last_name })
 
-                res.writeHead(200, DEFAULT_HEADER)
-                res.write(JSON.stringify({ message: "Ok" }))
-                res.end()
+                response.status(200).send({ message: "Ok" })
             } catch (error) {
-                res.writeHead(500, DEFAULT_HEADER)
-                res.write(`Error: ${error}`)
-                res.end()
+                response.status(500).send({ error })
             }
         },
 
         /**
-        * @param {IncomingMessage} req
-        * @param {ServerResponse} res
+        * @param {ServerRequest} request
+        * @param {ServerResponse} response
         */
-        async remove(req, res) {
+        async remove(request, response) {
             try {
-                const id = Number(req.params.id)
+                const id = Number(request.params.id)
 
                 await userRepository.delete(id)
 
-                res.writeHead(200, DEFAULT_HEADER)
-                res.write(JSON.stringify({ message: "Ok" }))
-                res.end()
+                response.status(200).send({ message: "Ok" })
             } catch (error) {
-                res.writeHead(500, DEFAULT_HEADER)
-                res.write(`Error: ${error}`)
-                res.end()
+                response.status(500).send({ error })
             }
         },
     }

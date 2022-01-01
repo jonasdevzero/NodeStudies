@@ -1,15 +1,11 @@
-import Router from "./router.js";
+import Router from "./router.js"
 import UserFactory from "./factories/userFactory.js"
 
 const router = new Router()
 
 const userController = UserFactory.generateInstance()
 
-router.get("/", (req, res) => {
-    res.writeHead(200, { "Content-Type": "text/plain" })
-    res.write(`Ok`)
-    res.end()
-})
+router.get("/", (req, res) => res.status(200).text("Ok"))
 
 router.get("/user", userController.index)
 

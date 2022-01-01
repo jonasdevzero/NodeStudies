@@ -12,13 +12,13 @@ export default class Router {
     constructor() { }
 
     /**
-    * @param {http.IncomingMessage} req
-    * @param {http.ServerResponse} res
+    * @param {http.IncomingMessage} request
+    * @param {http.ServerResponse} response
     */
-    lookup(req, res) {
-        const { method } = req
+    lookup(request, response) {
+        const { method } = request
 
-        let { pathname, query } = url.parse(req.url)
+        let { pathname, query } = url.parse(request.url)
 
         // removing the "/" in the last index
         if (pathname.length > 1 && pathname.split("")[pathname.length - 1].charCodeAt() === 47)
@@ -34,21 +34,30 @@ export default class Router {
                 route.paramsName.map((n, i) => params[n] = paramValues[i])
             }
 
-            let data = ""
-            req.on("data", chunk => {
-                data += chunk
+            let body = ""
+            request.on("data", chunk => {
+                body += chunk
             })
 
-            req.on("end", () => {
-                req.params = params
-                req.body = data ? JSON.parse(data) : {}
-                req.query = query
-                route.handle(req, res)
+            request.on("end", () => {
+                request.params = params
+                request.body = body ? JSON.parse(body) : {}
+                request.query = query
+
+                const serverRequest = new ServerRequest({
+                    request,
+                    params,
+                    query,
+                    body: body ? JSON.parse(body) : {}
+                })
+                const serverResponse = new ServerResponse(response)
+
+                route.handle(serverRequest, serverResponse)
             })
         } else {
-            res.writeHead(404, { "Content-Type": "text/plain" })
-            res.write(`Route Not Found!`)
-            res.end()
+            response.writeHead(404, { "Content-Type": "text/plain" })
+            response.write(`Route Not Found!`)
+            response.end()
         }
     }
 
@@ -56,7 +65,7 @@ export default class Router {
      * 
      * @param {"GET" | "POST" | "PUT" | "DELETE"} method 
      * @param {string} path 
-     * @param {(req: http.IncomingMessage, res: http.ServerResponse) => void} handle 
+     * @param {(request: ServerRequest, response: ServerResponse) => void} handle 
      */
     on(method, path, handle) {
 
@@ -94,7 +103,7 @@ export default class Router {
 
     /**
      * @param {string} path
-     * @param {(req: http.IncomingMessage, res: http.ServerResponse) => void} handle
+     * @param {(request: ServerRequest, response: ServerResponse) => void} handle
      */
     get(path, handle) {
         this.on("GET", path, handle)
@@ -102,7 +111,7 @@ export default class Router {
 
     /**
      * @param {string} path
-     * @param {(req: http.IncomingMessage, res: http.ServerResponse) => void} handle
+     * @param {(request: ServerRequest, response: ServerResponse) => void} handle
      */
     post(path, handle) {
         this.on("POST", path, handle)
@@ -110,7 +119,7 @@ export default class Router {
 
     /**
      * @param {string} path
-     * @param {(req: http.IncomingMessage, res: http.ServerResponse) => void} handle
+     * @param {(request: ServerRequest, response: ServerResponse) => void} handle
      */
     put(path, handle) {
         this.on("PUT", path, handle)
@@ -118,9 +127,61 @@ export default class Router {
 
     /**
      * @param {string} path
-     * @param {(req: http.IncomingMessage, res: http.ServerResponse) => void} handle
+     * @param {(request: ServerRequest, response: ServerResponse) => void} handle
      */
     delete(path, handle) {
         this.on("DELETE", path, handle)
+    }
+}
+
+export class ServerRequest {
+    /**
+     * @param {{ request: http.IncomingMessage }} 
+     */
+    constructor({ request, params, query, body }) {
+        this.raw = request
+        this.params = params
+        this.query = query
+        this.body = body
+    }
+}
+
+export class ServerResponse {
+    DEFAULT_HEADER = { "Content-Type": "text/json" }
+
+    /**
+     * @param {http.ServerResponse} req 
+     */
+    constructor(req) {
+        this.raw = req
+    }
+
+    /**
+     * Sets the status response
+     * @param {number} status 
+     */
+    status(status) {
+        this.raw.statusCode = status
+        return this
+    }
+
+    /**
+     * Response JSON object
+     * @param {any} data 
+     */
+    send(data) {
+        this.raw.writeHead(this.raw.statusCode, this.DEFAULT_HEADER)
+        this.raw.write(JSON.stringify(data))
+        this.raw.end()
+    }
+
+    /**
+     * Response text
+     * @param {string} txt
+     */
+    text(txt) {
+        this.raw.writeHead(this.raw.statusCode, { "Content-Type": "text/plain" })
+        this.raw.write(txt)
+        this.raw.end()
     }
 }

@@ -78,7 +78,7 @@ export default class Router {
                 let parametricEnd = i
                 
                 for (let j = i; j < len; j++) {
-                    if (path[j].charCodeAt() === 47) {
+                    if (path[j].charCodeAt() === 47) { // charCode === 47 --> '/'
                         parametricEnd = j;
                         break
                     }
@@ -90,8 +90,9 @@ export default class Router {
                 i = parametricEnd > i ? parametricEnd - 1 : len
             } else if (charCode === 42) { // charCode === 42 --> '*'
                 isRegex = true
-                paramsName.push("*")
-                newPath += "\([.@!#$%^&*()a-zA-Z0-9\/]+)"
+                paramsName.push("*")                
+                const conditional = newPath.length > 1 && newPath[newPath.length - 1].charCodeAt() === 47 ? newPath.slice(0, newPath.length - 1) : newPath
+                newPath += "\([.@!#$%^&*()a-zA-Z0-9\/]+)|" + conditional
                 i = len
             } else {
                 newPath += path[i]

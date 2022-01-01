@@ -10,7 +10,7 @@ router.get("/", (_req, res) => res.status(200).text("Ok"))
 // Wildcard test route
 router.get("/wildcard/*", (req, res) => {
     const path = req.params["*"]
-    res.status(200).send({ message: `Selected path /wildcard/${path}` })
+    res.status(200).send({ message: `Selected path /wildcard/${path || ""}` })
 })
 
 // User routes

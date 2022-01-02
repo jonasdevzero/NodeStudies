@@ -40,10 +40,6 @@ export default class Router {
             })
 
             request.on("end", () => {
-                request.params = params
-                request.body = body ? JSON.parse(body) : {}
-                request.query = query
-
                 const serverRequest = new ServerRequest({
                     request,
                     params,
@@ -71,6 +67,7 @@ export default class Router {
         let newPath = ""
         let isRegex = false
         const paramsName = []
+        
         for (let i = 0, len = path.length; i < len; i++) {
             const charCode = path[i].charCodeAt()
 

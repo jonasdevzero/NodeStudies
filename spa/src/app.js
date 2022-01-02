@@ -1,7 +1,7 @@
-import Dashboard from "./Dashboard.js"
-import Posts from "./Posts.js"
-import Post from "./Post.js"
-import Settings from "./Settings.js"
+import Dashboard from "./pages/Dashboard.js"
+import Posts from "./pages/Posts.js"
+import Post from "./pages/Post.js"
+import Settings from "./pages/Settings.js"
 
 const pathToRegex = path => new RegExp("^" + path.replace(/\//g, "\\/").replace(/:\w+/g, "(.+)") + "$")
 

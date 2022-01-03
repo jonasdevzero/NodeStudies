@@ -25,7 +25,7 @@ const server = http.createServer(async (req, res) => {
             res.write(file)
             res.end()
         } else {
-            const page = await fs.readFile(path.resolve() + "/src/index.html")
+            const page = await fs.readFile(path.resolve() + "/src/pages/index.html")
 
             res.writeHead(200, { "Content-Type": "text/html" })
             res.write(page, "utf-8")

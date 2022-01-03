@@ -12,14 +12,16 @@ const server = http.createServer((req, res) => {
 const ws = new WebsocketServer(server)
 
 ws.on("connection", (socket) => {
-    socket.on("message", (message, callback) => {
-        console.log("message from client:", message)
-
-        callback("Hello client - 2")
+    socket.on("connected", (roomName, callback) => {
+        socket.join(roomName)
+        
+        callback(socket.id)
     })
 
-    socket.emit("message", "Hello Client - 1", (clientMessage) => {
-        console.log("message from client", clientMessage)
+    socket.on("message", ({ roomName, message }, callback) => {
+        ws.to(roomName).emit("message", message)
+
+        callback()
     })
 })
 

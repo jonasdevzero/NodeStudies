@@ -2,7 +2,7 @@ import { Socket as RawSocket } from 'net'
 import Event from 'events'
 import Socket from './socket.js'
 import { kRooms, kOnNewConnection, kSocketEvents, kSocketRooms } from "./config.js"
-import { parseMessage, sendTextFrame } from "./util.js"
+import { parseFrame, constructReply } from "./util.js"
 
 export default class Sockets extends Event {
     #currentTo = []
@@ -32,18 +32,18 @@ export default class Sockets extends Event {
      * @returns {(data: Buffer) => void} 
      */
     #onSocketData(socket) {
-        return (data) => {
+        return (frame) => {
             try {
-                const d = parseMessage(data)
-                if (!d) return;
+                const data = parseFrame(frame)
+                if (!data) return;
 
-                let { event, message } = JSON.parse(d)
+                let { event, message } = JSON.parse(data)
 
                 // This allows callback functions between the client and server
                 message = message.map((m, i) => m == `${event}::callback:${i}` ? (...args) => { socket.emit(m, ...args) } : m)
                 this.#execEvent(socket, event, message)
             } catch (error) {
-                console.error('Wrong event format!!', parseMessage(data), "\n", error)
+                console.error('Wrong event format!!', parseFrame(data), "\n", error)
             }
         }
     }
@@ -101,13 +101,13 @@ export default class Sockets extends Event {
     /**
      * broadcast an event to all sockets in a room
      * @param {String} target room id
-     * @param {String} data JSON string
+     * @param {Buffer} data WebSocket frame
      */
     #broadCast(target, data) {
         const room = this[kRooms].get(target)
 
         for (const [_, user] of room) {
-            user.rawSocket.write(sendTextFrame(data))
+            user.rawSocket.write(constructReply(data))
         }
     }
 
@@ -144,11 +144,11 @@ export default class Sockets extends Event {
             return m
         })
 
-        const data = JSON.stringify({ event, message: args })
+        const data = constructReply({ event, message: args })
 
         for (const target of this.#currentTo) {
             const user = this.#users.get(target)
-            user ? user.rawSocket.write(sendTextFrame(data)) : this.#broadCast(target, data)
+            user ? user.rawSocket.write(data) : this.#broadCast(target, data)
         }
 
         this.#currentTo = []

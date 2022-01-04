@@ -15,6 +15,11 @@ export default class WebsocketServer extends Websockets {
 
     #initialize(server) {
         server.on("upgrade", (req, socket) => {
+            if (req.headers['upgrade'] !== 'websocket') {
+                socket.end('HTTP/1.1 400 Bad Request');
+                return;
+            }
+
             const headers = this.#authHandshake(req, socket)
             if (!headers.length) return;
 
@@ -30,8 +35,7 @@ export default class WebsocketServer extends Websockets {
 
         // Only accept: version >= 13 && 'api' or 'superchat' protocol - Can be any protocol of your preference
         if (version < 13 || protocol !== "chat") {
-            socket.end() // rejecting socket
-            socket.destroy()
+            socket.end("HTTP/1.1 400 Bad Request") // rejecting socket
             return ''
         }
 

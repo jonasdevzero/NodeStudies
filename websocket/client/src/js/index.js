@@ -22,6 +22,7 @@ socket.on("message", message => {
     msgEl.className = message.sender === userId ? "sender" : ""
 
     messages.appendChild(msgEl)
+    messages.scrollTo(0, messages.scrollHeight)
 })
 
 form.addEventListener("submit", e => {

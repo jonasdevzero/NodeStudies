@@ -1,9 +1,11 @@
 
-export function parseMessage(buffer) {
+/**
+ * Only allow to parse WebSocket frame to text
+ * @param {Buffer} buffer
+ */
+export function parseFrame(buffer) {
     const firstByte = buffer.readUInt8(0);
 
-    const isFinalFrame = Boolean((firstByte >>> 7) & 0x1);
-    const [reserved1, reserved2, reserved3] = [Boolean((firstByte >>> 6) & 0x1), Boolean((firstByte >>> 5) & 0x1), Boolean((firstByte >>> 4) & 0x1)];
     const opCode = firstByte & 0xF;
     // We can return null to signify that this is a connection termination frame 
     if (opCode === 0x8) return null;
@@ -22,9 +24,7 @@ export function parseMessage(buffer) {
             currentOffset += 2;
         } else {
             // 127 
-            // If this has a value, the frame size is ridiculously huge! 
-            const leftPart = buffer.readUInt32BE(currentOffset);
-            const rightPart = buffer.readUInt32BE(currentOffset += 4);
+            // If this has a value, the frame size is ridiculously huge!
             // Honestly, if the frame length requires 64 bits, you're probably doing it wrong. 
             // In Node.js you'll require the BigInt type, or a special library to handle this. 
             throw new Error('Large payloads not currently implemented');
@@ -60,6 +60,11 @@ export function parseMessage(buffer) {
     return data.toString('utf8');
 }
 
+/**
+ * 
+ * @param {{ event: string, message: any[] }} data 
+ * @returns {Buffer} - Returns a WebSocket frame
+ */
 export function constructReply(data) {
     // Convert the data to JSON and copy it into a buffer
     const json = JSON.stringify(data)
@@ -82,7 +87,7 @@ export function constructReply(data) {
     return buffer;
 }
 
-export function sendTextFrame(text) {
+export function sendTextFrame2(text) {
     let firstByte = 0x00,
     secondByte = 0x00,
     payloadLength = Buffer.from([0, 0]),

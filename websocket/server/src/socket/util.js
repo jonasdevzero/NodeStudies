@@ -65,7 +65,7 @@ export function parseFrame(buffer) {
  * @param {{ event: string, message: any[] }} data 
  * @returns {Buffer} - Returns a WebSocket frame
  */
-export function constructReply(data) {
+export function constructFrame(data) {
     // Convert the data to JSON and copy it into a buffer
     const json = JSON.stringify(data)
     const jsonByteLength = Buffer.byteLength(json);
@@ -87,7 +87,7 @@ export function constructReply(data) {
     return buffer;
 }
 
-export function sendTextFrame2(text) {
+export function constructTextFrame(text) {
     let firstByte = 0x00,
     secondByte = 0x00,
     payloadLength = Buffer.from([0, 0]),

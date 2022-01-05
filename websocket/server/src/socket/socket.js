@@ -2,7 +2,7 @@ import { Socket as RawSocket } from 'net'
 import { v4 as uuidV4 } from 'uuid'
 import WebsocketServer from './server.js'
 import { kSocketEvents, kSocketRooms, kRooms } from "./config.js"
-import { constructReply } from "./util.js"
+import { constructFrame } from "./util.js"
 
 export default class Socket {
     #server
@@ -58,7 +58,7 @@ export default class Socket {
             return m
         })
 
-        const data = constructReply({ event, message: args })
+        const data = constructFrame({ event, message: args })
         this.rawSocket.write(data)
         return this
     }

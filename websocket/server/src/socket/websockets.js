@@ -2,7 +2,7 @@ import { Socket as RawSocket } from 'net'
 import Event from 'events'
 import Socket from './socket.js'
 import { kRooms, kOnNewConnection, kSocketEvents, kSocketRooms } from "./config.js"
-import { parseFrame, constructReply } from "./util.js"
+import { parseFrame, constructFrame } from "./util.js"
 
 export default class Sockets extends Event {
     #currentTo = []
@@ -105,9 +105,9 @@ export default class Sockets extends Event {
      */
     #broadCast(target, data) {
         const room = this[kRooms].get(target)
-
+        
         for (const [_, user] of room) {
-            user.rawSocket.write(constructReply(data))
+            user.rawSocket.write(data)
         }
     }
 
@@ -144,7 +144,7 @@ export default class Sockets extends Event {
             return m
         })
 
-        const data = constructReply({ event, message: args })
+        const data = constructFrame({ event, message: args })
 
         for (const target of this.#currentTo) {
             const user = this.#users.get(target)
